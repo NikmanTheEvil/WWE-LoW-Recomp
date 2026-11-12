@@ -1,0 +1,5 @@
+# Asset tools (tools/low_assets.py). Tested with pillow 12.3.0, numpy 2.5.3, scipy 1.18.1.
+# Pillow needs DXT5 (BC3) encoding support, added in 11.2.
+pillow>=11.2.1
+numpy>=1.26
+scipy>=1.11

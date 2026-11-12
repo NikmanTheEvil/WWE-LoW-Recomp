@@ -1,0 +1,98 @@
+# ============================================================================
+#  LoWRecomp - player configuration
+#
+#  Lives next to lowrecomp.exe. The launcher (LoWLauncher.exe) writes its
+#  settings into this file; everything else (e.g. key bindings) can be edited
+#  here directly and applies on the next start.
+#  Reset: delete this file and run the installer again.
+#
+#  Key names: A-Z, 0-9, F1-F24, Space, Return, Escape, Tab, Backspace,
+#  Up, Down, Left, Right, Shift, Control, Alt, Insert, Delete, Home, End,
+#  PageUp, PageDown, Numpad0-9, Comma, Period, Minus, Plus, Semicolon,
+#  Quote, Slash, Backslash, LBracket, RBracket, Backtick (= console!)
+#  Mouse: LMB, RMB, MMB, Mouse4, Mouse5
+#
+#  Several alternatives separated by commas: "J,K,LMB"
+#  Chord (all keys at the same time) with plus: "Space+K"
+#  Empty text "" = action not bound.
+#
+#  Reserved by ReXGlue: F3 (debug), F4 (settings), F7 (achievements),
+#  Backtick (console).
+# ============================================================================
+
+# --- Game / display (set by the launcher; values here = defaults) ----------
+game_data_root = ""          # game folder (default.xex) - set by the installer
+gpu_plugin = "xenos"         # graphics through the Xenos plugin (rexgpu-xenos.dll)
+user_language = 1            # 1 English, 3 German, 4 French, 5 Spanish, 6 Italian
+video_mode_width = 1280      # the game always renders at 720p ...
+video_mode_height = 720
+resolution_scale = 1         # ... sharper via the internal resolution (1-4)
+vsync = true                 # the game's frame pacing - must stay on
+
+[low]
+# Language of the launcher: "auto" (Windows language if available, else English), "en" or "de"
+launcher_language = "auto"
+# Run loading phases at a higher frame rate (back to 60 Hz afterwards)
+turbo_loading = true
+turbo_hold_ms = 250
+# Skip the company logos at start-up (experimental)
+skip_logos = false
+# 60 fps mode: never switch down to 30 frames per second (experimental)
+fps60 = false
+# Do not ask for a storage device at start-up (pick the hard drive directly)
+auto_storage = true
+# Skip the launcher (holding Shift while starting LoWLauncher.exe still shows it)
+launcher_skip = false
+
+# Keyboard/mouse controls on/off (controllers always work)
+kbm = true
+
+# All devices control player 1. Turn on if DS4Windows is running and a
+# PlayStation controller would otherwise control players 1 AND 2.
+single_player_input = false
+
+# Button symbols in the game: "xbox", "ps3" (original PS3 symbols, needs the
+# PS3 PKG at installation), "keyboard" or "auto" (by controller at start-up).
+button_glyphs = "xbox"
+
+# Older layout (run on RT, modifier on LT, dodge on LB/RB).
+# According to the game texts you run with LB - only turn on if Shift does not run.
+swap_triggers = false
+
+# --- Movement ---------------------------------------------- (left stick)
+bind_move_up    = "W"
+bind_move_down  = "S"
+bind_move_left  = "A"
+bind_move_right = "D"
+bind_run        = "Shift"                  # hold LB + direction (WASD)
+
+# --- Attack ----------------------------------------------------------------
+bind_strike     = "Left,LMB"               # X  - strike (arrow left)
+bind_grapple    = "Down,RMB"               # A  - grapple (arrow down); direction away from opponent = Irish whip
+bind_reversal   = "Up,MMB"                 # Y  - reversal / block (arrow up)
+bind_action     = "Right,Mouse4"           # B  - pin, climb, enter/leave ring, pick up (arrow right)
+bind_finisher   = "Mouse5"                 # X+A - finisher (or arrow left + down together)
+bind_taunt      = "2"                      # B+Y - taunt
+bind_modifier   = "Control"                # RB - with Space+arrow strong grapple, with arrow up move theft
+bind_dodge_left  = "Q"                     # LT - with direction: evasive roll
+bind_dodge_right = "E"                     # RT - with direction: evasive roll
+
+# --- Quick grapple (right stick, rarely used): Space + arrow key -------------
+bind_grapple_up    = "Space+Up"
+bind_grapple_down  = "Space+Down"
+bind_grapple_left  = "Space+Left"
+bind_grapple_right = "Space+Right"
+
+# --- D-pad (taunts) ----------------------------------------------------------
+bind_dpad_up    = "1"
+bind_dpad_right = "3"
+bind_dpad_down  = "4"
+bind_dpad_left  = "5"
+
+# --- Menu / system -----------------------------------------------------------
+bind_confirm = "Return"                   # A
+bind_cancel  = "Backspace"                # B
+bind_pause   = "Escape"                   # Start
+bind_select  = "Tab"                      # Back
+bind_l3      = "F"                        # press left stick
+bind_r3      = "V"                        # press right stick

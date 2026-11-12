@@ -1,0 +1,12 @@
+# ReXGlue project manifest for manual builds (see docs/BUILDING.md).
+# Expects the extracted game in ../game (default.xex + pac, sound, movies ...).
+# The installer writes its own copy with the paths of your game.
+[project]
+name = "lowrecomp"
+sdk_version = "0.10.1"
+game_root = "../game"
+
+[entrypoint]
+file_path = "../game/default.xex"
+out_directory_path = "generated/default"
+includes = ['config/default_codegen.toml']
