@@ -5,6 +5,8 @@ statischer Recompilation ([ReXGlue](https://github.com/rexglue/rexglue-sdk)). De
 PowerPC-Code des Spiels wird nach C++ übersetzt und für x64 kompiliert. Beim Spielen läuft
 kein CPU-Emulator.
 
+<a href="https://recomplauncher.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://recomplauncher.com/assets/press/launcher/badge-light.svg"><img alt="Get it on RecompLauncher" src="https://recomplauncher.com/assets/press/launcher/badge-dark.svg" height="48"></picture></a>
+
 > **Du brauchst eine eigene Kopie des Spiels.** Dieses Repository enthält keinen Spielcode,
 > keine Grafiken und keine anderen Spieldaten. Der Installer baut alles auf deinem PC aus
 > deinen eigenen Dateien.
@@ -49,6 +51,12 @@ genau zu dieser Programmdatei gehört.
    Nur eine `.pkg`? Siehe [PlayStation-Tastensymbole](#playstation-tastensymbole-optional).
 7. Warten. Beim ersten Mal werden das ReXGlue-SDK und das ganze Spiel kompiliert, je nach
    Prozessor etwa **1–2 Stunden**. Spätere Updates gehen viel schneller.
+
+**Mit [RecompLauncher](https://recomplauncher.com):** LoWRecomp dort installieren und auf der
+Einrichtungsseite deine `.iso` oder deinen Spielordner wählen. Er führt denselben Build aus
+(`installer\prepare.cmd`, beim ersten Mal etwa 1–2 Stunden), in seinem eigenen Ordner, zeigt die
+Einstellungen auf der Seite des Spiels und startet es mit Play. PlayStation-Symbole gibt es nur
+über den normalen Installer.
 
 ### PlayStation-Tastensymbole (optional)
 
@@ -116,6 +124,8 @@ allen anderen Sprachen Englisch); die Sprache des Launchers lässt sich unter
 - Steuerung: **[docs/STEUERUNG.md](docs/STEUERUNG.md)** (Tastaturbelegung, Controller, Optionen)
 - Spielstände: `Dokumente\lowrecomp`
 - Logs für Fehlerberichte: `logs\lowrecomp.log` im Installationsordner
+- Start ohne Launcher-Fenster: `LoWLauncher.exe --play` (wartet auf das Spiel und gibt dessen
+  Exitcode zurück); `--game <Ordner>` nimmt für diesen Start einen anderen Spielordner mit `default.xex`
 
 ## Bekannte Probleme
 

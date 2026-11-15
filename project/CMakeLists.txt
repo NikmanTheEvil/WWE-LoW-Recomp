@@ -8,7 +8,7 @@
 # The normal way to build is the installer (install.bat in the repository root).
 
 cmake_minimum_required(VERSION 3.25)
-project(lowrecomp VERSION 1.0.0 LANGUAGES CXX)
+project(lowrecomp VERSION 1.0.1 LANGUAGES CXX)
 if(WIN32)
     enable_language(RC)
 endif()

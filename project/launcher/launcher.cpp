@@ -514,8 +514,11 @@ bool WriteFileUtf8(const std::wstring& path, const std::string& text) {
   return bool(f);
 }
 
+// extra_args: appended to the game's command line (already quoted).
+// wait_exit: when given, waits for the game and stores its exit code.
 bool LaunchGame(const std::wstring& exe_dir, const std::wstring& game_dir, int glyphs,
-                std::string& error) {
+                std::string& error, const std::wstring& extra_args = L"",
+                DWORD* wait_exit = nullptr) {
   const std::wstring exe = exe_dir + L"\\lowrecomp.exe";
   if (!FileExists(exe)) {
     error = Tr("lowrecomp.exe not found.");
@@ -552,6 +555,7 @@ bool LaunchGame(const std::wstring& exe_dir, const std::wstring& game_dir, int g
   while (!dir.empty() && (dir.back() == L'\\' || dir.back() == L'/')) dir.pop_back();
   std::wstring cmd = L"\"" + exe + L"\"";
   if (!dir.empty()) cmd += L" --game_data_root \"" + dir + L"\"";
+  if (!extra_args.empty()) cmd += L" " + extra_args;
   STARTUPINFOW si{};
   si.cb = sizeof(si);
   PROCESS_INFORMATION pi{};
@@ -561,8 +565,47 @@ bool LaunchGame(const std::wstring& exe_dir, const std::wstring& game_dir, int g
     return false;
   }
   CloseHandle(pi.hThread);
+  if (wait_exit) {
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    if (!GetExitCodeProcess(pi.hProcess, wait_exit)) *wait_exit = 0;
+  }
   CloseHandle(pi.hProcess);
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// "--play": start the game without the launcher window and wait for it (for
+// RecompLauncher, scripts and shortcuts). Only used when the argument is given.
+// ---------------------------------------------------------------------------
+// Exit codes before the game runs (listed in recomplauncher.json):
+constexpr int kPlayNoGame = 9001;       // no game folder with default.xex
+constexpr int kPlayNoExe = 9002;        // lowrecomp.exe missing (not built yet)
+constexpr int kPlayStartFailed = 9003;  // button symbols or process start failed
+
+std::wstring QuoteArg(const std::wstring& a) {
+  if (!a.empty() && a.find_first_of(L" \t\"") == std::wstring::npos) return a;
+  std::wstring out = L"\"";
+  size_t backslashes = 0;
+  for (wchar_t c : a) {
+    if (c == L'\\') { ++backslashes; continue; }
+    if (c == L'"') out.append(backslashes * 2 + 1, L'\\');
+    else out.append(backslashes, L'\\');
+    backslashes = 0;
+    out += c;
+  }
+  out.append(backslashes * 2, L'\\');
+  return out + L"\"";
+}
+
+void PlayLog(const std::wstring& exe_dir, const std::string& text) {
+  CreateDirectoryW((exe_dir + L"\\logs").c_str(), nullptr);
+  std::ofstream f(std::filesystem::path(exe_dir + L"\\logs\\launcher.log"), std::ios::binary | std::ios::app);
+  SYSTEMTIME t;
+  GetLocalTime(&t);
+  char stamp[32];
+  std::snprintf(stamp, sizeof(stamp), "%04d-%02d-%02d %02d:%02d:%02d ", t.wYear, t.wMonth, t.wDay, t.wHour,
+                t.wMinute, t.wSecond);
+  f << stamp << text << "\r\n";
 }
 
 // ---------------------------------------------------------------------------
@@ -718,6 +761,50 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
     svr_status = Tr("Moved an earlier import to the right place - try again in the game.");
   std::vector<low::launcher::ImportedSave> svr_saves =
       low::launcher::ListImported(std::filesystem::path(user_data_root));
+
+  // Command line (opt-in): "--game <folder>" uses that game folder (with
+  // default.xex) for this start; "--play" starts the game right away without
+  // the launcher window and waits for it. Other arguments after "--play" go to
+  // the game. Without arguments nothing changes.
+  {
+    int argc = 0;
+    LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    bool play = false;
+    std::wstring extra;
+    for (int i = 1; argv && i < argc; ++i) {
+      const std::wstring a = argv[i];
+      if (a == L"--play") {
+        play = true;
+      } else if (a == L"--game" && i + 1 < argc) {
+        settings.game_dir = Normalize(argv[++i]);
+      } else if (play) {
+        extra += (extra.empty() ? L"" : L" ") + QuoteArg(a);
+      }
+    }
+    if (argv) LocalFree(argv);
+    if (play) {
+      // A log for crash reports, as the launcher window would set it.
+      if (FileExists(config_path) && toml.GetString("", "log_file", "").empty()) {
+        toml.SetString("", "log_file", ToUtf8(exe_dir + L"\\logs\\lowrecomp.log"));
+        WriteFileUtf8(config_path, toml.Text());
+      }
+      if (!IsGameDir(settings.game_dir)) {
+        PlayLog(exe_dir, "--play: no game folder with default.xex (" + ToUtf8(settings.game_dir) + ")");
+        return kPlayNoGame;
+      }
+      if (!FileExists(exe_dir + L"\\lowrecomp.exe")) {
+        PlayLog(exe_dir, "--play: lowrecomp.exe not found");
+        return kPlayNoExe;
+      }
+      std::string err;
+      DWORD code = 0;
+      if (!LaunchGame(exe_dir, settings.game_dir, settings.glyphs, err, extra, &code)) {
+        PlayLog(exe_dir, "--play: " + err);
+        return kPlayStartFailed;
+      }
+      return int(code);
+    }
+  }
 
   // Start directly if wanted (holding Shift still shows the launcher).
   if (settings.launcher_skip && !(GetAsyncKeyState(VK_SHIFT) & 0x8000) &&

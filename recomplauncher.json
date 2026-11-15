@@ -1,0 +1,198 @@
+{
+  "$schema": "https://recomplauncher.com/schema/recomplauncher.json",
+  "format": 1,
+  "name": "LoWRecomp",
+  "repo": "NikmanTheEvil/WWE-LoW-Recomp",
+  "game": {
+    "kind": "iso_or_folder",
+    "label": "Your copy of WWE Legends of WrestleMania for Xbox 360, European (PAL) release: its disc image (.iso), or its folder with default.xex. Other regions don't work.",
+    "check": { "file": "plist360_Legend.arc", "xdvdfs": "plist360_Legend.arc" },
+    "dumps": [
+      { "name": "Europe", "size": 7835492352, "crc32": "4718fff0" }
+    ]
+  },
+  "prepare": {
+    "program": ["installer/prepare.cmd"],
+    "args": ["-Game", "{game}"],
+    "label": "Building the game from your copy (first time about 1-2 hours)",
+    "timeout": 14400,
+    "version": "1.0.1"
+  },
+  "start": {
+    "program": ["LoWLauncher.exe"],
+    "args": ["--play"]
+  },
+  "config": [
+    {
+      "id": "main",
+      "format": "toml",
+      "file": [{ "path": "{install}/lowrecomp.toml" }]
+    }
+  ],
+  "groups": [
+    { "id": "Display" },
+    { "id": "Game" },
+    { "id": "Controls" },
+    { "id": "Troubleshooting", "advanced": true }
+  ],
+  "settings": [
+    {
+      "id": "window", "label": "Window", "group": "Display",
+      "help": "Fullscreen fills your screen and lets you switch apps quickly. Exclusive gives the game the screen to itself. Windowed uses Window size.",
+      "choices": [
+        { "label": "Fullscreen", "set": { "fullscreen": "true", "fullscreen_exclusive": "false" } },
+        { "label": "Exclusive", "set": { "fullscreen": "true", "fullscreen_exclusive": "true" } },
+        { "label": "Windowed", "set": { "fullscreen": "false" } }
+      ],
+      "defaults": { "fullscreen": "true", "fullscreen_exclusive": "false" }
+    },
+    {
+      "id": "window_size", "label": "Window size", "group": "Display",
+      "help": "The size of the game's window in Windowed mode.",
+      "choices": [
+        { "label": "1280 x 720", "set": { "window_width": "1280", "window_height": "720" } },
+        { "label": "1600 x 900", "set": { "window_width": "1600", "window_height": "900" } },
+        { "label": "1920 x 1080", "set": { "window_width": "1920", "window_height": "1080" } },
+        { "label": "2560 x 1440", "set": { "window_width": "2560", "window_height": "1440" } },
+        { "label": "3840 x 2160", "set": { "window_width": "3840", "window_height": "2160" } }
+      ],
+      "defaults": { "window_width": "1920", "window_height": "1080", "fullscreen": "true" },
+      "when": { "fullscreen": "false" }
+    },
+    {
+      "id": "anti_aliasing", "label": "Anti-aliasing", "group": "Display",
+      "help": "Smooths jagged edges. FXAA costs next to nothing; strong FXAA also softens the picture a little.",
+      "choices": [
+        { "label": "Off", "set": { "swap_post_effect": "\"none\"" } },
+        { "label": "FXAA", "set": { "swap_post_effect": "\"fxaa\"" } },
+        { "label": "FXAA (strong)", "set": { "swap_post_effect": "\"fxaa_extreme\"" } }
+      ],
+      "defaults": { "swap_post_effect": "\"none\"" }
+    },
+    {
+      "id": "filtering", "label": "Texture filtering", "group": "Display",
+      "help": "Keeps the ring, the mat and the crowd sharp at shallow angles.",
+      "choices": [
+        { "label": "Off", "set": { "anisotropic_override": "0" } },
+        { "label": "2x", "set": { "anisotropic_override": "2" } },
+        { "label": "4x", "set": { "anisotropic_override": "3" } },
+        { "label": "8x", "set": { "anisotropic_override": "4" } },
+        { "label": "16x", "set": { "anisotropic_override": "5" } }
+      ],
+      "defaults": { "anisotropic_override": "3" }
+    },
+    {
+      "id": "frame_rate", "label": "Frame rate", "group": "Display",
+      "help": "The console drops some scenes to 30 FPS. 60 everywhere keeps the game at 60. Experimental.",
+      "choices": [
+        { "label": "As on console", "set": { "low/fps60": "false" } },
+        { "label": "60 everywhere", "set": { "low/fps60": "true" } }
+      ],
+      "defaults": { "low/fps60": "false" }
+    },
+    {
+      "id": "monitor", "label": "Monitor", "group": "Display", "advanced": true,
+      "help": "The screen the game opens on.",
+      "choices": [
+        { "label": "Default", "set": { "monitor": "0" } },
+        { "label": "Monitor 1", "set": { "monitor": "1" } },
+        { "label": "Monitor 2", "set": { "monitor": "2" } },
+        { "label": "Monitor 3", "set": { "monitor": "3" } },
+        { "label": "Monitor 4", "set": { "monitor": "4" } }
+      ],
+      "defaults": { "monitor": "0" }
+    },
+    {
+      "id": "language", "label": "Game language", "group": "Game",
+      "help": "The language of the game's menus and texts.",
+      "choices": [
+        { "label": "English", "set": { "user_language": "1" } },
+        { "label": "Deutsch", "set": { "user_language": "3" } },
+        { "label": "Français", "set": { "user_language": "4" } },
+        { "label": "Italiano", "set": { "user_language": "6" } },
+        { "label": "Español", "set": { "user_language": "5" } }
+      ],
+      "defaults": { "user_language": "1" }
+    },
+    {
+      "id": "loading", "label": "Loading times", "group": "Game",
+      "help": "Quick runs loading screens much faster than the console. Like the original keeps the console's pace.",
+      "choices": [
+        { "label": "Quick", "set": { "low/turbo_loading": "true" } },
+        { "label": "Like the original", "set": { "low/turbo_loading": "false" } }
+      ],
+      "defaults": { "low/turbo_loading": "true" }
+    },
+    {
+      "id": "logos", "label": "Company logos", "group": "Game",
+      "help": "The logo movies when the game starts. Skipping them is experimental.",
+      "choices": [
+        { "label": "Play them", "set": { "low/skip_logos": "false" } },
+        { "label": "Skip them", "set": { "low/skip_logos": "true" } }
+      ],
+      "defaults": { "low/skip_logos": "false" }
+    },
+    {
+      "id": "button_symbols", "label": "Button symbols", "group": "Controls",
+      "help": "The buttons the game shows. Automatic picks Xbox or keyboard keys by what you play with.",
+      "choices": [
+        { "label": "Xbox 360", "set": { "low/button_glyphs": "\"xbox\"" } },
+        { "label": "Keyboard", "set": { "low/button_glyphs": "\"keyboard\"" } },
+        { "label": "Automatic", "set": { "low/button_glyphs": "\"auto\"" } }
+      ],
+      "defaults": { "low/button_glyphs": "\"xbox\"" }
+    },
+    {
+      "id": "kbm", "label": "Keyboard and mouse", "group": "Controls",
+      "help": "Play with keyboard and mouse in the style of the WWE 2K games. Controllers always work.",
+      "choices": [
+        { "label": "On", "set": { "low/kbm": "true" } },
+        { "label": "Off", "set": { "low/kbm": "false" } }
+      ],
+      "defaults": { "low/kbm": "true" }
+    },
+    {
+      "id": "single_player_input", "label": "All devices are player 1", "group": "Controls", "advanced": true,
+      "help": "Turn on if DS4Windows is running and a PlayStation controller would control players 1 and 2.",
+      "choices": [
+        { "label": "Off", "set": { "low/single_player_input": "false" } },
+        { "label": "On", "set": { "low/single_player_input": "true" } }
+      ],
+      "defaults": { "low/single_player_input": "false" }
+    },
+    {
+      "id": "swap_triggers", "label": "Trigger layout", "group": "Controls", "advanced": true,
+      "help": "Older layout: run on RT, modifier on LT, dodge on LB and RB.",
+      "choices": [
+        { "label": "Game's own", "set": { "low/swap_triggers": "false" } },
+        { "label": "Older layout", "set": { "low/swap_triggers": "true" } }
+      ],
+      "defaults": { "low/swap_triggers": "false" }
+    },
+    {
+      "id": "log_level", "label": "Log detail", "group": "Troubleshooting",
+      "help": "More detail in logs/lowrecomp.log for bug reports. Everything slows the game down.",
+      "choices": [
+        { "label": "Normal", "set": { "log_level": "\"info\"" } },
+        { "label": "Detailed", "set": { "log_level": "\"debug\"" } },
+        { "label": "Everything", "set": { "log_level": "\"trace\"" } }
+      ],
+      "defaults": { "log_level": "\"info\"" }
+    }
+  ],
+  "saves": ["{documents}/lowrecomp/B13EBABEBABEBABE"],
+  "folders": {
+    "saves": [{ "path": "{documents}/lowrecomp" }],
+    "logs": [{ "path": "{install}/logs" }]
+  },
+  "actions": [
+    { "id": "saves", "label": "Saves", "help": "Your save game and imported SmackDown vs. RAW 2009 superstars.", "open": "saves" },
+    { "id": "logs", "label": "Logs", "help": "The game's log, for bug reports.", "open": "logs" }
+  ],
+  "exit_codes": {
+    "9001": "The game's files are missing. Set the game up again on its page.",
+    "9002": "The game hasn't been built yet. Run the setup again on the game's page.",
+    "9003": "The game couldn't start. Details are in logs/launcher.log."
+  },
+  "looks": { "graphics": "d3d12" }
+}

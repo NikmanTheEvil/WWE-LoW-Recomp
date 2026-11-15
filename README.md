@@ -4,6 +4,8 @@
 static recompilation ([ReXGlue](https://github.com/rexglue/rexglue-sdk)). The game's
 PowerPC code is translated to C++ and compiled for x64. No CPU emulator runs at play time.
 
+<a href="https://recomplauncher.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://recomplauncher.com/assets/press/launcher/badge-light.svg"><img alt="Get it on RecompLauncher" src="https://recomplauncher.com/assets/press/launcher/badge-dark.svg" height="48"></picture></a>
+
 > 🇩🇪 Deutsche Anleitung: **[LIESMICH.md](LIESMICH.md)**
 
 > **You need your own copy of the game.** This repository contains no game code,
@@ -49,6 +51,11 @@ configuration is tied to this exact executable.
    Only have a `.pkg`? See [PlayStation button symbols](#playstation-button-symbols-optional).
 7. Wait. The first installation compiles the ReXGlue SDK and the whole game, which takes
    roughly **1–2 hours** depending on your CPU. Later updates are much faster.
+
+**With [RecompLauncher](https://recomplauncher.com):** install LoWRecomp there and pick your
+`.iso` or game folder on its setup screen. It runs the same build (`installer\prepare.cmd`,
+about 1–2 hours the first time) inside its own folder, shows the settings on the game's page
+and starts the game with Play. PlayStation symbols need the normal installer.
 
 ### PlayStation button symbols (optional)
 
@@ -115,6 +122,8 @@ all other languages); the launcher language can be changed under *Game → Launc
 - Controls: see **[docs/CONTROLS.md](docs/CONTROLS.md)** (keyboard layout, controllers, options)
 - Save games: `Documents\lowrecomp`
 - Logs for bug reports: `logs\lowrecomp.log` in the installation folder
+- Start without the launcher window: `LoWLauncher.exe --play` (waits for the game and returns
+  its exit code); `--game <folder>` uses another game folder with `default.xex` for that start
 
 ## Known issues
 
@@ -135,7 +144,8 @@ Building by hand without the installer: **[docs/BUILDING.md](docs/BUILDING.md)**
 
 ```
 install.bat                 start the installer (double-click)
-installer/                  Install-LoWRecomp.ps1, Uninstall-LoWRecomp.ps1
+installer/                  Install-LoWRecomp.ps1, Uninstall-LoWRecomp.ps1, prepare.cmd (RecompLauncher)
+recomplauncher.json         setup, settings and start for RecompLauncher
 project/                    CMake project: runtime hooks (src/), launcher (launcher/),
                             recompiler configuration (config/default_codegen.toml), resources
 tools/                      asset tools (Python): button symbols, keyboard/PS3 HUD,

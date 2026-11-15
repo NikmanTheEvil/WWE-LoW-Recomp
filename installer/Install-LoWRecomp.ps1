@@ -26,6 +26,9 @@
 .PARAMETER NoRomCopy   Do not keep copies of the originals in <install>\roms, without asking
 .PARAMETER BuildDir    Folder for SDK and build files (default: <InstallDir>\build, about 30 GB)
 .PARAMETER RexSdk      Use an existing, already built rexglue-sdk checkout instead of building one
+.PARAMETER Prepare     For RecompLauncher (prepare step in recomplauncher.json): builds into the folder this
+                       installer is in, asks nothing, prints "progress <0-1> <text>" lines and creates no
+                       shortcuts, Start menu entries or uninstaller (the launcher manages the folder)
 #>
 [CmdletBinding()]
 param(
@@ -40,7 +43,8 @@ param(
   [switch]$KeepRoms,
   [switch]$NoRomCopy,
   [string]$BuildDir,
-  [string]$RexSdk
+  [string]$RexSdk,
+  [switch]$Prepare
 )
 
 $ErrorActionPreference = 'Stop'
@@ -62,15 +66,36 @@ $German    = (Get-UICulture).TwoLetterISOLanguageName -eq 'de'
 
 function T([string]$en, [string]$de) { if ($German) { return $de } else { return $en } }
 
+# -Prepare (RecompLauncher): no questions, the release folder is the installation
+if ($Prepare) { $NoPrompt = $true }
+
 # ---------------------------------------------------------------------------
 # Output helpers
 # ---------------------------------------------------------------------------
 $script:StepNo = 0
 $script:StepCount = 8
+# -Prepare: share of the whole run per step, for the "progress" lines
+$script:StepSpan = @{ 1 = @(0.00, 0.08); 2 = @(0.08, 0.18); 3 = @(0.18, 0.20); 4 = @(0.20, 0.28)
+                      5 = @(0.28, 0.55); 6 = @(0.55, 0.95); 7 = @(0.95, 0.99); 8 = @(0.99, 1.00) }
+$script:StepText = ''
+function Progress([double]$fraction, [string]$text) {
+  if (-not $Prepare) { return }
+  $f = [Math]::Min(1.0, [Math]::Max(0.0, $fraction)).ToString('0.000', [Globalization.CultureInfo]::InvariantCulture)
+  [Console]::Out.WriteLine("progress $f " + ($text -replace '[\r\n]+', ' '))
+  [Console]::Out.Flush()
+}
+# within a step: creeps towards its end while a long tool runs
+function Step-Progress([double]$seconds, [string]$text) {
+  $span = $script:StepSpan[$script:StepNo]
+  if (-not $span) { return }
+  Progress ($span[0] + ($span[1] - $span[0]) * 0.9 * (1 - [Math]::Exp(-$seconds / 900))) $text
+}
 function Step([string]$en, [string]$de) {
   $script:StepNo++
+  $script:StepText = T $en $de
   Write-Host ""
-  Write-Host ("[{0}/{1}] {2}" -f $script:StepNo, $script:StepCount, (T $en $de)) -ForegroundColor Cyan
+  Write-Host ("[{0}/{1}] {2}" -f $script:StepNo, $script:StepCount, $script:StepText) -ForegroundColor Cyan
+  Step-Progress 0 $script:StepText
 }
 function Info([string]$en, [string]$de) { Write-Host ("      " + (T $en $de)) }
 function Ok([string]$en, [string]$de)   { Write-Host ("      " + (T $en $de)) -ForegroundColor Green }
@@ -106,6 +131,7 @@ function Invoke-Tool([string]$Name, [string]$Exe, [string[]]$Arguments, [string]
   $null = $p.Handle   # keeps the exit code available (Windows PowerShell quirk)
   $last = ''
   $start = Get-Date
+  $lastProgress = [DateTime]::MinValue
   while (-not $p.HasExited) {
     Start-Sleep -Milliseconds 1500
     try {
@@ -116,12 +142,20 @@ function Invoke-Tool([string]$Name, [string]$Exe, [string[]]$Arguments, [string]
         $elapsed = (Get-Date) - $start
         $text = ($line -replace '\s+', ' ').Trim()
         if ($text.Length -gt 90) { $text = $text.Substring(0, 87) + '...' }
-        Write-Host ("`r      [{0:hh\:mm\:ss}] {1}" -f $elapsed, $text.PadRight(90)) -NoNewline
+        if ($Prepare) {
+          # one progress line every few seconds instead of the live status line
+          if (((Get-Date) - $lastProgress).TotalSeconds -ge 5) {
+            $lastProgress = Get-Date
+            Step-Progress $elapsed.TotalSeconds ("$($script:StepText): $text")
+          }
+        } else {
+          Write-Host ("`r      [{0:hh\:mm\:ss}] {1}" -f $elapsed, $text.PadRight(90)) -NoNewline
+        }
       }
     } catch { }
   }
   $p.WaitForExit()
-  if ($last) { Write-Host "" }
+  if ($last -and -not $Prepare) { Write-Host "" }
   # stderr behind stdout in one log
   if (Test-Path $err) {
     $e = Get-Content -LiteralPath $err -Raw
@@ -178,7 +212,7 @@ function Pick-Folder([string]$description, [string]$start) {
 # uninstaller deletes the installation folder, so it must belong to us alone.
 function Resolve-InstallDir([string]$dir) {
   $dir = [IO.Path]::GetFullPath($dir.Trim().Trim('"'))
-  if ((Test-Path -LiteralPath $dir -PathType Container) -and
+  if (-not $Prepare -and (Test-Path -LiteralPath $dir -PathType Container) -and
       -not (Test-Path (Join-Path $dir 'install.json')) -and
       (Get-ChildItem -LiteralPath $dir -Force -ErrorAction SilentlyContinue | Select-Object -First 1)) {
     $dir = Join-Path $dir 'LoWRecomp'
@@ -220,9 +254,11 @@ Write-Host ("  " + (T "Builds the game from your own copy. Nothing of the game i
 # Installation folder: parameter, otherwise the previous installation (update),
 # otherwise ask (Enter = default folder, B = browse, or type a path).
 $state = @{}
-$prev = Get-ItemProperty -Path $UninstKey -ErrorAction SilentlyContinue
+$prev = if ($Prepare) { $null } else { Get-ItemProperty -Path $UninstKey -ErrorAction SilentlyContinue }
 $prevDir = $null
 if ($prev -and $prev.InstallLocation -and (Test-Path $prev.InstallLocation)) { $prevDir = $prev.InstallLocation }
+# -Prepare: RecompLauncher's folder for this game = the folder this installer came in
+if ($Prepare -and -not $InstallDir) { $InstallDir = $RepoRoot }
 $defaultDir = Join-Path $env:LOCALAPPDATA 'Programs\LoWRecomp'
 try {
   if (-not $InstallDir) {
@@ -278,7 +314,10 @@ $drive = Get-PSDrive -Name ($InstallDir.Substring(0, 1)) -ErrorAction SilentlyCo
 if ($drive -and $drive.Free -lt 45GB) {
   Warn ("Only {0:N0} GB free on drive {1}: - build and game need about 45 GB (55 GB with copies of the originals)." -f ($drive.Free / 1GB), $drive.Name) `
        ("Nur {0:N0} GB frei auf Laufwerk {1}: - Build und Spiel brauchen etwa 45 GB (55 GB mit Kopien der Originale)." -f ($drive.Free / 1GB), $drive.Name)
-  if (-not (Ask-YesNo "Continue anyway?" "Trotzdem fortfahren?" $false)) { exit 1 }
+  if (-not (Ask-YesNo "Continue anyway?" "Trotzdem fortfahren?" $false)) {
+    Progress 0 (T "Not enough free disk space (about 45 GB needed)." "Nicht genug freier Speicher (etwa 45 GB nötig).")
+    exit 1
+  }
 }
 
 try {
@@ -723,19 +762,24 @@ Step "Installing" "Installieren"
 # ===========================================================================
 Get-ChildItem -LiteralPath $bin -File | Where-Object { $_.Extension -in '.exe', '.dll', '.pdb' -or $_.Name -eq 'gamecontrollerdb.txt' } |
   ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $InstallDir -Force }
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Uninstall-LoWRecomp.ps1') -Destination (Join-Path $InstallDir 'uninstall.ps1') -Force
-foreach ($doc in @('README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md')) {
-  $src = Join-Path $RepoRoot $doc
-  if (Test-Path $src) { Copy-Item -LiteralPath $src -Destination $InstallDir -Force }
+# Built in place (-Prepare: the release folder is the installation) -> the
+# installer, docs and uninstaller are already here and the launcher removes it.
+$inPlace = $RepoRoot.TrimEnd('\') -ieq $InstallDir.TrimEnd('\')
+if (-not $inPlace) {
+  Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Uninstall-LoWRecomp.ps1') -Destination (Join-Path $InstallDir 'uninstall.ps1') -Force
+  foreach ($doc in @('README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md')) {
+    $src = Join-Path $RepoRoot $doc
+    if (Test-Path $src) { Copy-Item -LiteralPath $src -Destination $InstallDir -Force }
+  }
+  $docsDir = Join-Path $InstallDir 'docs'
+  New-Item -ItemType Directory -Force -Path $docsDir | Out-Null
+  Copy-Item -Path (Join-Path $RepoRoot 'docs\*') -Destination $docsDir -Recurse -Force
 }
-$docsDir = Join-Path $InstallDir 'docs'
-New-Item -ItemType Directory -Force -Path $docsDir | Out-Null
-Copy-Item -Path (Join-Path $RepoRoot 'docs\*') -Destination $docsDir -Recurse -Force
 
 # Copy of this installer version (sources\installer): repairs and rebuilds work
 # without the downloaded repository (Start menu: "Update or repair").
 $srcCopy = Join-Path $InstallDir 'sources\installer'
-if ($RepoRoot.TrimEnd('\') -ne $srcCopy.TrimEnd('\')) {
+if (-not $inPlace -and $RepoRoot.TrimEnd('\') -ne $srcCopy.TrimEnd('\')) {
   & robocopy.exe $RepoRoot $srcCopy /MIR /XD .git __pycache__ build out /NFL /NDL /NJH /NJS /NP | Out-Null
   if ($LASTEXITCODE -ge 8) { Warn "Could not copy the installer to $srcCopy." "Installer konnte nicht nach $srcCopy kopiert werden." }
 }
@@ -754,6 +798,15 @@ if ($text -match '(?m)^game_data_root\s*=') { $text = $text -replace '(?m)^game_
 else { $text = "$line`r`n" + $text }
 [IO.File]::WriteAllText($cfg, $text, (New-Object Text.UTF8Encoding($false)))
 Ok "Files installed" "Dateien installiert"
+
+# -Prepare: RecompLauncher starts, updates and removes the game itself
+if ($Prepare) {
+  $state['InstalledAt'] = (Get-Date).ToString('s')
+  $state['Prepared'] = $true
+  Save-State $state
+  Progress 1 (T "Ready to play" "Bereit zum Spielen")
+  exit 0
+}
 
 # ===========================================================================
 Step "Shortcuts and uninstaller" "Verknüpfungen und Deinstallation"
@@ -818,5 +871,6 @@ exit 0
   Write-Host ""
   Write-Host ("  " + (T "ERROR: " "FEHLER: ") + $_.Exception.Message) -ForegroundColor Red
   Write-Host ("  " + (T "Logs: " "Protokolle: ") + $script:LogDir)
+  Progress 0 ((T "ERROR: " "FEHLER: ") + $_.Exception.Message)
   exit 1
 }

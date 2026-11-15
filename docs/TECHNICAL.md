@@ -106,3 +106,18 @@ Dear ImGui + Direct3D 11. Writes `lowrecomp.toml` (preserving comments, `toml_ed
 prepares the symbol variants (`glyph_patch.h`: page swap in the fonts, copy of the HUD
 variants, only when the content differs), imports SvR 2009 saves (`svr_import.h`,
 `stfs_reader.h`) and starts `lowrecomp.exe`.
+
+Opt-in command line: `--play` skips the window, prepares the symbol variants, starts
+`lowrecomp.exe` (further arguments are passed on), waits for it and returns its exit code;
+9001 = no game folder, 9002 = `lowrecomp.exe` missing, 9003 = start failed (details in
+`logs\launcher.log`). `--game <folder>` overrides the game folder for that start.
+
+## RecompLauncher
+
+`recomplauncher.json` (top of the release zip, built by `tools/make_release.py` and attached
+by `.github/workflows/release.yml`) tells RecompLauncher how to set the game up: its setup
+step runs `installer\prepare.cmd -Game <copy>`, i.e. the normal installer with `-Prepare`
+(no questions, builds into the release folder itself, prints `progress <0-1> <text>` lines,
+no shortcuts or uninstaller). Play runs `LoWLauncher.exe --play`; the settings on the game's
+page edit `lowrecomp.toml`. Raise `prepare.version` together with `VERSION` whenever a
+release changes anything that gets built, so players' copies are rebuilt.
