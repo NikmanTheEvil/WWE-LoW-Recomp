@@ -38,7 +38,7 @@ configuration is tied to this exact executable.
 
 ## Installation
 
-1. Download this repository (**Code → Download ZIP**, then unpack it) or `git clone` it.
+1. Download the latest release, then unpack it.
 2. Double-click **`install.bat`**.
 3. Choose the installation folder: press Enter for the default
    (`%LOCALAPPDATA%\Programs\LoWRecomp`), `B` to browse, or type a path.
